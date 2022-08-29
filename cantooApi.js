@@ -108,19 +108,11 @@ class CantooAPI {
     this.idEnt = idEnt
     this.uai = uai
     this.userId = userId
-
-    this.addEventListener('ready', () => {
-      this.setState('ready')
-    })
-    this.addEventListener('completed', () => {
-      this.setState('completed')
-    })
-    this.addEventListener('closed', () => {
-      this.setState('closed')
-    })
-    window.addEventListener('message', (e) => {
-      if (e.data.type === 'completed') {
-        this.callbacks.completed.forEach(callback => callback('', '', ''))
+    // this might cause a memory leak
+    window.addEventListener('message', event => {
+      if(['ready', 'completed', 'closed'].includes(event.data.type)) {
+        this.setState(event.data.type)
+        this.callbacks[event.data.type].forEach(listener => listener(event.data))
       }
     })
   }
@@ -136,14 +128,14 @@ class CantooAPI {
   /**
    * @return {string}
    */
-  getUrl () {
+  get url () {
     return buildUrl({env: this.env, fileId: this.fileId, idEnt: this.idEnt, uai: this.uai, userId: this.userId})
   }
 
   /**
    * @param {ConnectProps} props
    */
-  static connect(props) {
+  static async connect(props) {
     const { domElement, fileId, userId, idEnt, uai, env } = props
     const { width, height } = domElement.getBoundingClientRect()
     const iframe = document.createElement('iframe')
@@ -160,15 +152,17 @@ class CantooAPI {
     domElement.appendChild(iframe)
     const api = new CantooAPI({ ...props, iframe })
     api.setState('launching')
+
     if (fileId) {
-      return /** @type {Promise<void>} */(new Promise((resolve) => {
-        window.addEventListener('message', (e) => {
-          if(e.data.type === 'ready') {
-            resolve()
-          }
-        })
+      return /** @type {Promise<CantooAPI>} */(new Promise((resolve) => {
+        const callback = () => {
+          api.removeEventListener('ready', callback)
+          resolve(api)
+        }
+        api.addEventListener('ready', callback)
       }))
     }
+    return api
   }
 
   /**
@@ -177,13 +171,29 @@ class CantooAPI {
    */
   loadDocument(id, readOnly) {
     this.userId = id
-    this.iframe.src = this.getUrl()
+    this.iframe.src = this.url
+    return /** @type {Promise<void>} */(new Promise((resolve) => {
+      const callback = () => {
+        this.removeEventListener('ready', callback)
+        resolve()
+      }
+      this.addEventListener('ready', callback)
+    }))
   }
 
   /**
    * @returns {Promise<void>}
    */
-  async shutdown() {}
+  async shutdown() {
+    this.domElement.removeChild(this.iframe)
+    this.setState('closed')
+    this.callbacks['closed'].forEach(callback => callback())
+    this.callbacks = {
+      ready: [],
+      completed: [],
+      closed: []
+    }
+  }
 
   /**
    * @type {{ 
@@ -195,6 +205,17 @@ class CantooAPI {
   addEventListener = (eventName, callback, readOnly = false) => {
     this.callbacks[eventName].push(callback)
   }
+
+  /**
+   * 
+   * @param {'ready'|'completed'|'closed'} eventName 
+   * @param {() => void} callback 
+   */
+  removeEventListener = (eventName, callback) => {
+    // @ts-ignore
+    this.callbacks[eventName] = this.callbacks[eventName].filter(c => c !== callback)
+  }
+  
 
 }
 
