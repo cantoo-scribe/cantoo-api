@@ -35,7 +35,13 @@
  */
 function buildUrl ({env, userId, idEnt, uai, fileId}) {
   const appUrl = env === 'develop' ? 'app.develop.cantoo.fr' : env === 'preprod' ? 'app.preprod.cantoo.fr' : 'app.cantoo.fr'
-  return`${appUrl}/kardi?userId=${userId}&idEnt=${idEnt}&uai=${uai}&fileId=${fileId}`
+  const query = Object.entries({ env, userId, idEnt, uai, fileId }).reduce((queryAcc, queryParam) => {
+    if (queryParam[1] !== undefined) {
+      queryAcc+=`&${queryParam[0]}\=${queryParam[1]}`
+    }
+    return queryAcc
+  }, '')
+  return`https://${appUrl}/kardi?${query}`
 }
 
 class CantooAPI {
@@ -110,9 +116,10 @@ class CantooAPI {
     this.userId = userId
     // this might cause a memory leak
     window.addEventListener('message', event => {
-      if(['ready', 'completed', 'closed'].includes(event.data.type)) {
-        this.setState(event.data.type)
-        this.callbacks[event.data.type].forEach(listener => listener(event.data))
+      const data = JSON.parse(event.data)
+      if(['ready', 'completed', 'closed'].includes(data.type)) {
+        this.setState(data.type)
+        this.callbacks[data.type].forEach(listener => listener(data))
       }
     })
   }
@@ -122,7 +129,8 @@ class CantooAPI {
    * @protected
    */
   setState(state) {
-    state = state
+    // @ts-ignore
+    this.state = state
   }
 
   /**
