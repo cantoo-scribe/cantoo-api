@@ -9,6 +9,7 @@
  * @property {string} idEnt
  * @property {string} uai
  * @property {'develop'|'preprod'|'prod'} env
+ * @property {boolean} readOnly
  */
 
 /**
@@ -105,6 +106,7 @@ class CantooAPI {
 
   /**
    * @param {ConnectProps & {iframe: HTMLIFrameElement}} params
+   * @private
    */
   constructor({domElement, iframe, env, fileId, idEnt, uai, userId}) {
     this.domElement = domElement
