@@ -9,14 +9,14 @@ To create a new connection with the cantoo api you must call the static method `
 | key | type | required | description |
 |-----|------|----------|-------------|
 | domElement | ` HTMLElement` | required | The DOM element which the iframe will be attached to |
-| userId | `string` | required | The user id that wants to interact with the api |
-| fileId | `string` | optional | The file id that is going to be edited |
-| idEnt | `string` | required |  |
-| uai | `string` | required |  |
-| env | `'prod' \| 'preprod' \| 'develop'` | required | The environment that the api will connect with |
-| readOnly | `boolean` | required |  |
+| userId | `string` | required | The user id that wants to interact with the api (as received from the GAR) |
+| fileId | `string` | optional | The file id that is going to be edited (as received in the "ready" and "completed" events) |
+| idEnt | `string` | required | The idEnt as received from the GAR |
+| uai | `string` | required | The UAI as received from the GAR |
+| env | `'prod' \| 'preprod' \| 'develop'` | required | The environment that the client will connect to |
+| readOnly | `boolean` | required | Should the user be able to edit the file, or is it only a viewer? |
 
-**if the `fileId` is provided, connect will wait until the iframe get ready to return the CantooApi instance**
+**if the `fileId` is provided, connect will wait until the iframe gets ready to return the CantooApi instance**
 
 ```js
 const api = await CantooAPI.connect({domElement, env: 'develop', idEnt: '1', uai: '2', userId: '10', fileId: '10', readOnly: true})
