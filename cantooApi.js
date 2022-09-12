@@ -35,14 +35,14 @@
  * @return {string}
  */
 function buildUrl ({env, userId, idEnt, uai, fileId}) {
-  const appUrl = env === 'develop' ? 'app.develop.cantoo.fr' : env === 'preprod' ? 'app.preprod.cantoo.fr' : 'app.cantoo.fr'
+  const appUrl = env === 'develop' ? 'develop.cantoo.fr' : env === 'preprod' ? 'preprod.cantoo.fr' : 'cantoo.fr'
   const query = Object.entries({ env, userId, idEnt, uai, fileId }).reduce((queryAcc, queryParam) => {
     if (queryParam[1] !== undefined) {
       queryAcc+=`&${queryParam[0]}\=${queryParam[1]}`
     }
     return queryAcc
   }, '')
-  return`https://${appUrl}/kardi?${query}`
+  return`https://${appUrl}/api/kardi?${query}`
 }
 
 class CantooAPI {
