@@ -1,25 +1,66 @@
 //@ts-check
 
 /**
- *
  * @typedef {Object} ConnectProps
- * @property {HTMLElement} domElement
- * @property {string} userId
- * @property {string|undefined} fileId
- * @property {string} idEnt
- * @property {string} uai
- * @property {'develop'|'preprod'|'prod'} env
- * @property {boolean} readOnly
+ * @property {HTMLElement} domElement The DOM node the iframe should be attached to
+ */
+
+/**
+ * @typedef {'ready' | 'completed' | 'destroyed'} EventType
+ */
+
+/**
+ * @typedef {Object} ReadyEvent
+ * @property {string} userId The id of the user currently logged in the app
+ * @property {string} fileId The id of the file being viewed/edited
+ */
+
+/**
+ * @typedef {Object} CompletedEvent
+ * @property {string} userId The id of the user currently logged in the app
+ * @property {string} fileId The id of the file being viewed/edited
+ * @property {string} title The title of the file being viewed/edited
+ */
+
+/**
+ * @callback ReadyHandler
+ * @param {ReadyEvent} event The "ready" event
+ * @return {void}
+ */
+
+/**
+ * @callback CompletedHandler
+ * @param {CompletedEvent} event The "completed" event
+ * @return {void}
+ */
+
+/**
+ * @callback DestroyedHandler
+ * @return {void}
+ */
+
+/**
+ * @template {EventType} EventName
+ * @typedef {EventName extends 'ready' ? ReadyHandler  : EventName extends 'completed' ? CompletedEvent : DestroyedHandler} EventHandler
+ */
+
+/**
+ * @template {EventType} EventName
+ * @callback EventListener
+ * @param {EventName} eventName The Event to listen to
+ * @param {EventHandler<EventName>} listener The event listener
+ * @returns {void}
  */
 
 /**
  *
  * @typedef {Object} UrlProps
- * @property {string} userId
- * @property {string|undefined} fileId
- * @property {string} idEnt
- * @property {string} uai
- * @property {'develop'|'preprod'|'prod'} env
+ * @property {string} userId The useId that will own the edited document
+ * @property {string=} fileId The id of the document to edit. If not provided, will create a new document
+ * @property {string} idEnt The idEnt of the user. Will be used for authentication.
+ * @property {string} uai The uai of the user. Will be used for authentication.
+ * @property {'develop'|'preprod'|'prod'} env The current environment
+ * @property {boolean} readOnly Should we open a viewer or an editor?
  */
 
 /**
@@ -27,108 +68,160 @@
  * @typedef {Object} Callbacks
  * @property {((id: string, userId: string) => void)[]} ready
  * @property {((id: string, title: string, userId: string) => void)[]} completed
- * @property {(() => void)[]} closed
+ * @property {(() => void)[]} destroyed
  */
 
 /**
  * @param {UrlProps} props
  * @return {string}
  */
-function buildUrl ({env, userId, idEnt, uai, fileId}) {
-  const appUrl = env === 'develop' ? 'develop.cantoo.fr' : env === 'preprod' ? 'preprod.cantoo.fr' : 'cantoo.fr'
-  const query = Object.entries({ env, userId, idEnt, uai, fileId }).reduce((queryAcc, queryParam) => {
+function buildUrl({ env, userId, idEnt, uai, fileId, readOnly }) {
+  const hosts = {
+    develop: 'develop.cantoo.fr',
+    preprod: 'preprod.cantoo.fr',
+    prod: 'cantoo.fr'
+  }
+  const host = hosts[env]
+  if (!host) throw new Error(`${env} is not a valid environment value. Try 'develop', 'preprod' or 'prod'.`)
+  const query = Object.entries({ userId, idEnt, uai, fileId, readOnly }).reduce((queryAcc, queryParam) => {
     if (queryParam[1] !== undefined) {
-      queryAcc+=`&${queryParam[0]}\=${queryParam[1]}`
+      queryAcc += `&${queryParam[0]}\=${queryParam[1]}`
     }
     return queryAcc
   }, '')
-  return`https://${appUrl}/api/kardi?${query}`
+  return `https://${host}/api/kardi?${query}`
 }
 
 class CantooAPI {
   /**
-   * @type {'launching'|'ready'|'completed'|'closed'}
+   * The current state of the iFrame
+   * @type {'launching'|'ready'|'completed'|'destroyed'}
    * @readonly
    */
-  state = 'closed'
+  state = 'launching'
 
   /**
-   * @type {Callbacks}
-   * @private
+   * Holds the listeners for each event type
+   * @type {{
+   *  ready: ReadyHandler[]
+   *  completed: CompletedHandler[]
+   *  destroyed: DestroyedHandler[]
+   * }}
    */
   callbacks = {
+    /** @type {ReadyHandler[]} */
     ready: [],
+    /** @type {CompletedHandler[]} */
     completed: [],
-    closed: []
+    /** @type {DestroyedHandler[]} */
+    destroyed: []
   }
 
   /**
+   * The parent DOM element the iframe is attatched to
    * @type {ConnectProps['domElement']}
    * @private
    */
   domElement
-  
+
   /**
-   * @type {ConnectProps['env']}
+   * The current environment
+   * @type {UrlProps['env']}
    * @private
    */
   env
 
-   /**
-   * @type {ConnectProps['fileId']}
+  /**
+   * The Id of the file currently shown in the iFrame
+   * @type {UrlProps['fileId']}
    * @private
    */
   fileId
 
-   /**
-   * @type {ConnectProps['idEnt']}
+  /**
+   * The Id of the user's ENT
+   * @type {UrlProps['idEnt']}
    * @private
    */
   idEnt
-  
+
   /**
-   * @type {ConnectProps['uai']}
+   * The establishment Id
+   * @type {UrlProps['uai']}
    * @private
    */
-   uai
-  
+  uai
+
   /**
-   * @type {ConnectProps['userId']}
+   * The user Id currently logged in the app
+   * @type {UrlProps['userId']}
    * @private
    */
-   userId
-  
+  userId
+
   /**
+   * The iframe DOM node
    * @type {HTMLIFrameElement}
    * @private
    */
   iframe
 
   /**
-   * @param {ConnectProps & {iframe: HTMLIFrameElement}} params
+   * Should the document be made read only?
+   * @type {boolean}
    * @private
    */
-  constructor({domElement, iframe, env, fileId, idEnt, uai, userId}) {
+  readOnly
+
+  /**
+   * The listener listening to postMessage events
+   * @type {(event: MessageEvent) => void}
+   * @private
+   */
+  postMessageListener
+
+  /**
+   * Create a CantooApi object that you can use to create and control a Cantoo Scribe iframe
+   * @param {ConnectProps & UrlProps} params
+   */
+  constructor({ domElement, env, fileId, idEnt, uai, userId, readOnly }) {
     this.domElement = domElement
-    this.iframe = iframe
     this.env = env
     this.fileId = fileId
     this.idEnt = idEnt
     this.uai = uai
     this.userId = userId
-    // this might cause a memory leak
-    window.addEventListener('message', event => {
+    this.readOnly = readOnly
+
+    const { width, height } = domElement.getBoundingClientRect()
+    this.iframe = document.createElement('iframe')
+    this.iframe.width = width + ''
+    this.iframe.height = height + ''
+    this.iframe.src = buildUrl({ env, fileId, idEnt, uai, userId, readOnly })
+    const observer = new ResizeObserver(e => {
+      const resizeEntry = e[0]
+      const { width, height } = resizeEntry.contentRect
+      this.iframe.width = width + ''
+      this.iframe.height = height + ''
+    })
+    observer.observe(domElement)
+    domElement.appendChild(this.iframe)
+
+    this.postMessageListener = event => {
       const data = JSON.parse(event.data)
-      if(['ready', 'completed', 'closed'].includes(data.type)) {
+      if (['ready', 'completed', 'destroyed'].includes(data.type)) {
         this.setState(data.type)
         this.callbacks[data.type].forEach(listener => listener(data))
       }
-    })
+    }
+
+    // this might cause a memory leak if destroy is not called
+    window.addEventListener('message', this.postMessageListener)
   }
 
   /**
-   * @param {'launching'|'ready'|'completed'|'closed'} state
-   * @protected
+   * @param {'launching'|'ready'|'completed'|'destroyed'} state
+   * @private
    */
   setState(state) {
     // @ts-ignore
@@ -136,97 +229,87 @@ class CantooAPI {
   }
 
   /**
-   * @return {string}
-   */
-  get url () {
-    return buildUrl({env: this.env, fileId: this.fileId, idEnt: this.idEnt, uai: this.uai, userId: this.userId})
-  }
-
-  /**
-   * @param {ConnectProps} props
+   * Create an iframe running Cantoo Scribe for the provided user
+   * @param {ConnectProps & UrlProps} props
+   * @return {Promise<CantooAPI>} Returns a CantooApi object that lets you interact with the iframe. The 
    */
   static async connect(props) {
-    const { domElement, fileId, userId, idEnt, uai, env } = props
-    const { width, height } = domElement.getBoundingClientRect()
-    const iframe = document.createElement('iframe')
-    iframe.width = width + ''
-    iframe.height = height + ''
-    iframe.src = buildUrl({env, fileId, idEnt, uai, userId})
-    const observer = new ResizeObserver(e => {
-      const resizeEntry = e[0]
-      const { width, height } = resizeEntry.contentRect
-      iframe.width = width + ''
-      iframe.height = height + ''
-    })
-    observer.observe(domElement)
-    domElement.appendChild(iframe)
-    const api = new CantooAPI({ ...props, iframe })
-    api.setState('launching')
+    const api = new CantooAPI(props)
 
-    if (fileId) {
-      return /** @type {Promise<CantooAPI>} */(new Promise((resolve) => {
-        const callback = () => {
-          api.removeEventListener('ready', callback)
-          resolve(api)
-        }
-        api.addEventListener('ready', callback)
-      }))
-    }
-    return api
+    return /** @type {Promise<CantooAPI>} */(new Promise((resolve, reject) => {
+      /** @type {ReadyHandler} */
+      const callback = (event) => {
+        api.removeEventListener('ready', callback)
+        this.fileId = event.fileId
+        resolve(api)
+      }
+      api.addEventListener('ready', callback)
+      setTimeout(() => {
+        reject(new Error('The iframe took more than a minute to open. Timeout.'))
+        api.destroy()
+      }, 60000)
+    }))
   }
 
   /**
-   * @param {string} id
-   * @param {string|undefined} readOnly
+   * Load the specified document in Cantoo.
+   * @param {string} fileId The document id
+   * @param {string=} readOnly Should this viewer be made read only?
+   * @return {Promise<void>} A promise that will resolve when the document was loaded and the ready event was received.
    */
-  loadDocument(id, readOnly) {
-    this.userId = id
-    this.iframe.src = this.url
-    return /** @type {Promise<void>} */(new Promise((resolve) => {
+  loadDocument(fileId, readOnly) {
+    // TODO do it in a better way
+    this.iframe.src = this.iframe.src.replace(/fileId=(.*?)(&|$)/, fileId).replace('&?readOnly', '') + (readOnly ? 'readOnly' : '')
+    return /** @type {Promise<void>} */(new Promise((resolve, reject) => {
       const callback = () => {
         this.removeEventListener('ready', callback)
         resolve()
       }
       this.addEventListener('ready', callback)
+      setTimeout(() => {
+        reject(new Error('Loading the document took more than 20s. Timeout.'))
+        this.removeEventListener('ready', callback)
+      }, 20000)
     }))
   }
 
   /**
-   * @returns {Promise<void>}
+   * This method will destroy the iframe, remove existing event listeners and release all resources. Don't forget to call it when you get rid of CantooAPI object.
+   * @returns {void}
    */
-  async shutdown() {
+  destroy() {
+    window.removeEventListener('message', this.postMessageListener)
     this.domElement.removeChild(this.iframe)
-    this.setState('closed')
-    this.callbacks['closed'].forEach(callback => callback())
+    this.setState('destroyed')
+    this.callbacks['destroyed'].forEach(callback => callback())
     this.callbacks = {
       ready: [],
       completed: [],
-      closed: []
+      destroyed: []
     }
   }
 
   /**
-   * @type {{ 
-   * (eventName: 'ready', callback: (id: string, userId: string) => void, readOnly?: boolean): void;
-   * (eventName: 'completed', callback: (id: string, title: string, userId: string) => void): void;
-   * (eventName: 'closed', callback: () => void): void;
-   * }}
+   * Add an event listener to one of the events
+   * @template {EventType} EventName
+   * @param {EventName} eventName The event to listen to
+   * @param {EventHandler<EventName>} listener The event listener
+   * @return {void}
    */
-  addEventListener = (eventName, callback, readOnly = false) => {
-    this.callbacks[eventName].push(callback)
+  addEventListener = (eventName, listener) => {
+    this.callbacks[eventName].push(/** @type {DestroyedHandler} */(listener))
   }
 
   /**
-   * 
-   * @param {'ready'|'completed'|'closed'} eventName 
-   * @param {() => void} callback 
+   * Remove an existing event listener. Be careful, if you added the same listener twice, all of them will be removed.
+   * @template {EventType} EventName
+   * @param {EventName} eventName The event the listener was recording
+   * @param {EventHandler<EventName>} listener The event listener
+   * @return {void}
    */
-  removeEventListener = (eventName, callback) => {
-    // @ts-ignore
-    this.callbacks[eventName] = this.callbacks[eventName].filter(c => c !== callback)
+  removeEventListener = (eventName, listener) => {
+    this.callbacks[eventName] = /** @type {DestroyedHandler[]} */(this.callbacks[eventName].filter(c => c !== listener))
   }
-  
-
 }
 
 module.exports = CantooAPI
