@@ -1,11 +1,15 @@
 {
   "name": "@cantoo/cantoo-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "A client api for integration with Cantoo Scribe",
   "main": "cantooApi.js",
   "scripts": {
+    "release": "./release.sh",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Cantoo - Inschool SAS",
   "license": "ISC"
 }
