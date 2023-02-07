@@ -83,12 +83,10 @@ function buildUrl({ env, userId, idEnt, uai, fileId, readOnly }) {
   }
   const host = hosts[env]
   if (!host) throw new Error(`${env} is not a valid environment value. Try 'develop', 'preprod' or 'prod'.`)
-  const query = Object.entries({ userId, idEnt, uai, fileId, readOnly }).reduce((queryAcc, queryParam) => {
-    if (queryParam[1] !== undefined) {
-      queryAcc += `&${queryParam[0]}\=${queryParam[1]}`
-    }
-    return queryAcc
-  }, '')
+  const query = Object.entries({ userId, idEnt, uai, fileId, readOnly })
+    .map(([key, value]) => value === true ? key : value ? `${key}=${value}` : undefined)
+    .filter(entry => !!entry)
+    .join('&')
   return `https://${host}/api/kardi?${query}`
 }
 
@@ -197,7 +195,7 @@ class CantooAPI {
     this.iframe = document.createElement('iframe')
     this.iframe.width = width + ''
     this.iframe.height = height + ''
-    this.iframe.src = buildUrl({ env, fileId, idEnt, uai, userId, readOnly })
+    this.iframe.src = this._buildUrl()
     const observer = new ResizeObserver(e => {
       const resizeEntry = e[0]
       const { width, height } = resizeEntry.contentRect
@@ -254,15 +252,20 @@ class CantooAPI {
     }))
   }
 
+  _buildUrl() {
+    return buildUrl({ env: this.env, idEnt: this.idEnt, readOnly: this.readOnly, uai: this.uai, userId: this.userId })
+  }
+
   /**
    * Load the specified document in Cantoo.
    * @param {string} fileId The document id
-   * @param {string=} readOnly Should this viewer be made read only?
+   * @param {boolean=} readOnly Should this viewer be made read only?
    * @return {Promise<void>} A promise that will resolve when the document was loaded and the ready event was received.
    */
   loadDocument(fileId, readOnly) {
-    // TODO do it in a better way
-    this.iframe.src = this.iframe.src.replace(/fileId=(.*?)(&|$)/, fileId).replace('&?readOnly', '') + (readOnly ? 'readOnly' : '')
+    this.fileId = fileId
+    this.readOnly = !!readOnly
+    this.iframe.src = this._buildUrl()
     return /** @type {Promise<void>} */(new Promise((resolve, reject) => {
       const callback = () => {
         this.removeEventListener('ready', callback)
@@ -311,7 +314,7 @@ class CantooAPI {
    * @return {void}
    */
   removeEventListener = (eventName, listener) => {
-    this.callbacks[eventName] = /** @type {DestroyedHandler[]} */(this.callbacks[eventName].filter(c => c !== listener))
+    this.callbacks[/** @type {'destroyed'} **/(eventName)] = /** @type {DestroyedHandler[]} */(this.callbacks[eventName].filter(c => c !== listener))
   }
 }
 
