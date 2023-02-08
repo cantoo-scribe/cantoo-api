@@ -65,11 +65,13 @@
  * @typedef {Object} FileCreationProp
  * @property {undefined=} fileId The id of the document to edit.
  * @property {string} title The title of the new document. This is required if no fileId is provided
+ * @property {false=} readOnly The title of the new document. This is required if no fileId is provided
  */
 /**
  * @typedef {Object} FileLoadingProp
  * @property {string} fileId The id of the document to edit.
  * @property {string=} title The title of the new document. This is required if no fileId is provided
+ * @property {boolean=} readOnly The title of the new document. This is required if no fileId is provided
  */
 
 /**
@@ -196,7 +198,7 @@ class CantooAPI {
 
   /**
    * Create a CantooApi object that you can use to create and control a Cantoo Scribe iframe
-   * @param {ConnectProps & UrlProps} params
+   * @param {ConnectProps & UrlProps & (FileCreationProp | FileLoadingProp)} params
    */
   constructor({ domElement, env, idEnt, uai, userId, readOnly, ...props }) {
     this.domElement = domElement

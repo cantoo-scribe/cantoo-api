@@ -22,7 +22,8 @@
             idEnt: 'Test',
             uai: '0999080T',
             userId: 'test-user',
-            readOnly: false
+            readOnly: true,
+            title: 'test'
           }).then(cantoo => {
             document.getElementById('close').setAttribute('style', 'display:inline;')
             cantoo.addEventListener('ready', function () { console.log('ready', ...arguments) })
@@ -40,7 +41,7 @@
             })
           })
         }
-        
+
         console.log('connecting')
         connect()
       })
