@@ -191,18 +191,9 @@ class CantooAPI {
     this.userId = userId
     this.readOnly = readOnly
 
-    const { width, height } = domElement.getBoundingClientRect()
     this.iframe = document.createElement('iframe')
-    this.iframe.width = width + ''
-    this.iframe.height = height + ''
     this.iframe.src = this._buildUrl()
-    const observer = new ResizeObserver(e => {
-      const resizeEntry = e[0]
-      const { width, height } = resizeEntry.contentRect
-      this.iframe.width = width + ''
-      this.iframe.height = height + ''
-    })
-    observer.observe(domElement)
+    this.iframe.setAttribute('style', 'flex: 1 1 0;align-self: stretch;')
     domElement.appendChild(this.iframe)
 
     this.postMessageListener = event => {
@@ -318,4 +309,4 @@ class CantooAPI {
   }
 }
 
-module.exports = CantooAPI
+export default CantooAPI

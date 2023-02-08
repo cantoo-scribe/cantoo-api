@@ -8,7 +8,7 @@ To create a new connection with the cantoo api you must call the static method `
 
 | key | type | required | description |
 |-----|------|----------|-------------|
-| domElement | ` HTMLElement` | required | The DOM element which the iframe will be attached to |
+| domElement | ` HTMLElement` | required | The DOM element which the iframe will be attached to. It should use `display:flex;` |
 | userId | `string` | required | The user id that wants to interact with the api (as received from the GAR) |
 | fileId | `string` | optional | The file id that is going to be edited (as received in the "ready" and "completed" events) |
 | idEnt | `string` | required | The idEnt as received from the GAR |

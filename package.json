@@ -5,7 +5,8 @@
   "main": "cantooApi.js",
   "scripts": {
     "release": "./release.sh",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node ./server.js",
+    "open": "xdg-open http://localhost:8000/"
   },
   "publishConfig": {
     "access": "public"
