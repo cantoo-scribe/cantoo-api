@@ -98,7 +98,7 @@ function buildUrl({ env, ...props }) {
     .map(([key, value]) => value === true ? key : value ? `${key}=${value}` : undefined)
     .filter(entry => !!entry)
     .join('&')
-  return `https://${host}/embed?${query}`
+  return `https://${host}/api/embed?${query}`
 }
 
 class CantooAPI {
