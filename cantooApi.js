@@ -53,14 +53,23 @@
  */
 
 /**
- *
  * @typedef {Object} UrlProps
  * @property {string} userId The useId that will own the edited document
- * @property {string=} fileId The id of the document to edit. If not provided, will create a new document
  * @property {string} idEnt The idEnt of the user. Will be used for authentication.
  * @property {string} uai The uai of the user. Will be used for authentication.
  * @property {'develop'|'preprod'|'prod'} env The current environment
  * @property {boolean} readOnly Should we open a viewer or an editor?
+ */
+
+/**
+ * @typedef {Object} FileCreationProp
+ * @property {undefined=} fileId The id of the document to edit.
+ * @property {string} title The title of the new document. This is required if no fileId is provided
+ */
+/**
+ * @typedef {Object} FileLoadingProp
+ * @property {string} fileId The id of the document to edit.
+ * @property {string=} title The title of the new document. This is required if no fileId is provided
  */
 
 /**
@@ -72,10 +81,10 @@
  */
 
 /**
- * @param {UrlProps} props
+ * @param {UrlProps & (FileCreationProp | FileLoadingProp)} props
  * @return {string}
  */
-function buildUrl({ env, userId, idEnt, uai, fileId, readOnly }) {
+function buildUrl({ env, ...props }) {
   const hosts = {
     develop: 'develop.cantoo.fr',
     preprod: 'preprod.cantoo.fr',
@@ -83,7 +92,7 @@ function buildUrl({ env, userId, idEnt, uai, fileId, readOnly }) {
   }
   const host = hosts[env]
   if (!host) throw new Error(`${env} is not a valid environment value. Try 'develop', 'preprod' or 'prod'.`)
-  const query = Object.entries({ userId, idEnt, uai, fileId, readOnly })
+  const query = Object.entries(props)
     .map(([key, value]) => value === true ? key : value ? `${key}=${value}` : undefined)
     .filter(entry => !!entry)
     .join('&')
@@ -131,7 +140,14 @@ class CantooAPI {
 
   /**
    * The Id of the file currently shown in the iFrame
-   * @type {UrlProps['fileId']}
+   * @type {FileCreationProp['title']=}
+   * @private
+   */
+  title
+
+  /**
+   * The Id of the file currently shown in the iFrame
+   * @type {FileLoadingProp['fileId']=}
    * @private
    */
   fileId
@@ -182,14 +198,16 @@ class CantooAPI {
    * Create a CantooApi object that you can use to create and control a Cantoo Scribe iframe
    * @param {ConnectProps & UrlProps} params
    */
-  constructor({ domElement, env, fileId, idEnt, uai, userId, readOnly }) {
+  constructor({ domElement, env, idEnt, uai, userId, readOnly, ...props }) {
     this.domElement = domElement
     this.env = env
-    this.fileId = fileId
     this.idEnt = idEnt
     this.uai = uai
     this.userId = userId
     this.readOnly = readOnly
+
+    this.title = /** @type {FileCreationProp} */(props).title
+    this.fileId = /** @type {FileLoadingProp} */(props).fileId
 
     this.iframe = document.createElement('iframe')
     this.iframe.src = this._buildUrl()
@@ -219,7 +237,7 @@ class CantooAPI {
 
   /**
    * Create an iframe running Cantoo Scribe for the provided user
-   * @param {ConnectProps & UrlProps} props
+   * @param {ConnectProps & UrlProps & (FileCreationProp | FileLoadingProp)} props
    * @return {Promise<CantooAPI>} Returns a CantooApi object that lets you interact with the iframe. The 
    */
   static async connect(props) {
@@ -244,7 +262,16 @@ class CantooAPI {
   }
 
   _buildUrl() {
-    return buildUrl({ env: this.env, idEnt: this.idEnt, readOnly: this.readOnly, uai: this.uai, userId: this.userId, fileId: this.fileId })
+    return buildUrl({
+      env: this.env,
+      idEnt: this.idEnt,
+      readOnly: this.readOnly,
+      uai: this.uai,
+      userId: this.userId,
+      // We have to type as if we were creating or loading a file (here, loading)
+      fileId: /** @type {string} **/(this.fileId),
+      title: this.title
+    })
   }
 
   /**
@@ -255,6 +282,7 @@ class CantooAPI {
    */
   loadDocument(fileId, readOnly) {
     this.fileId = fileId
+    this.title = undefined
     this.readOnly = !!readOnly
     this.iframe.src = this._buildUrl()
     return /** @type {Promise<void>} */(new Promise((resolve, reject) => {

@@ -11,6 +11,7 @@ To create a new connection with the cantoo api you must call the static method `
 | domElement | ` HTMLElement` | required | The DOM element which the iframe will be attached to. It should use `display:flex;` |
 | userId | `string` | required | The user id that wants to interact with the api (as received from the GAR) |
 | fileId | `string` | optional | The file id that is going to be edited (as received in the "ready" and "completed" events) |
+| title | `string` | optional | The title of the file that will be created. Should not be set if fileId is set |
 | idEnt | `string` | required | The idEnt as received from the GAR |
 | uai | `string` | required | The UAI as received from the GAR |
 | env | `'prod' \| 'preprod' \| 'develop'` | required | The environment that the client will connect to |
@@ -26,8 +27,8 @@ Once the connection is done you can interact with the cantoo api through the fol
 
 |name|type|description|
 |----|----|-----------|
-| loadDocument |`(id: string, readOnly: string \| undefined) => Promise<void>`| Loads a new document on the Iframe |
-| addEventListener | `(eventName: 'ready', callback: (id: string, userId: string) => void, readOnly?: boolean) => void`| Adds a new listener to the 'ready' event |
+| loadDocument |`(id: string, readOnly?: boolean \| undefined) => Promise<void>`| Loads a new document on the Iframe |
+| addEventListener | `(eventName: 'ready', callback: (id: string, userId: string) => void) => void`| Adds a new listener to the 'ready' event |
 | addEventListener | `(eventName: 'completed', callback: (id: string, title: string, userId: string) => void) => void` | Adds a new listener to the `'completed'` event |
 | addEventListener | `(eventName: 'destroyed', callback: () => void) => void`| Adds a new listener to the 'destroyed' event |
 | removeEventListener | `(eventName: 'ready\|completed\|destroyed', callback) => void`| Removes a listener that is attached to some event. The callback is the function instance that was previously added to the listener |

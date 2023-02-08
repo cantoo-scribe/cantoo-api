@@ -5,25 +5,52 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Cantoo Api</title>
+    <style type="text/css">
+      .button {
+        padding: 1em;
+        cursor: pointer;
+      }
+    </style>
     <script type="module">
       import CantooAPI from './cantooApi.js'
       addEventListener('load', () => {
+        function connect() {
+          CantooAPI.connect({
+            domElement: document.getElementById('test'),
+            env: 'develop',
+            fileId: undefined,
+            idEnt: 'Test',
+            uai: '0999080T',
+            userId: 'test-user',
+            readOnly: false
+          }).then(cantoo => {
+            document.getElementById('close').setAttribute('style', 'display:inline;')
+            cantoo.addEventListener('ready', function () { console.log('ready', ...arguments) })
+            cantoo.addEventListener('completed', function () { console.log('completed', ...arguments) })
+            cantoo.addEventListener('destroyed', function () { console.log('destroyed', ...arguments) })
+            document.getElementById('close').addEventListener('click', () => {
+              cantoo.destroy()
+              document.getElementById('close').setAttribute('style', 'display:none;')
+              document.getElementById('reload').setAttribute('style', 'display:inline;')
+            })
+            document.getElementById('reload').addEventListener('click', () => {
+              connect()
+              document.getElementById('reload').setAttribute('style', 'display:none;')
+              document.getElementById('close').setAttribute('style', 'display:none;')
+            })
+          })
+        }
+        
         console.log('connecting')
-        const cantoo = CantooAPI.connect({
-          domElement: document.getElementById('test'),
-          env: 'develop',
-          fileId: undefined,
-          idEnt: 'Test',
-          uai: '0999080T',
-          userId: 'test-user',
-          readOnly: false
-        })
+        connect()
       })
     </script>
   </head>
   <body style="height:100vh;width:100vw;margin:0;">
     <div style="height: 100%;display:flex;flex-direction:column;align-items:stretch;">
       <h1>Here is your iframe</h1>
+      <button class='button' style="display: none;" id="close">close</button>
+      <button class='button' style="display: none;" id="reload">reload</button>
       <div id="test" style="flex:1 1 0;display:flex;"></div>
     </div>
   </body>
