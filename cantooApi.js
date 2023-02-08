@@ -253,7 +253,7 @@ class CantooAPI {
   }
 
   _buildUrl() {
-    return buildUrl({ env: this.env, idEnt: this.idEnt, readOnly: this.readOnly, uai: this.uai, userId: this.userId })
+    return buildUrl({ env: this.env, idEnt: this.idEnt, readOnly: this.readOnly, uai: this.uai, userId: this.userId, fileId: this.fileId })
   }
 
   /**
