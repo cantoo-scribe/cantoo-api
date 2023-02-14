@@ -28,8 +28,8 @@ Once the connection is done you can interact with the cantoo api through the fol
 |name|type|description|
 |----|----|-----------|
 | loadDocument |`(id: string, readOnly?: boolean \| undefined) => Promise<void>`| Loads a new document on the Iframe |
-| addEventListener | `(eventName: 'ready', callback: (id: string, userId: string) => void) => void`| Adds a new listener to the 'ready' event |
-| addEventListener | `(eventName: 'completed', callback: (id: string, title: string, userId: string) => void) => void` | Adds a new listener to the `'completed'` event |
+| addEventListener | `(eventName: 'ready', callback: (event: { id: string, userId: string }) => void) => void`| Adds a new listener to the 'ready' event |
+| addEventListener | `(eventName: 'completed', callback: (event: { id: string, title: string, userId: string }) => void) => void` | Adds a new listener to the `'completed'` event |
 | addEventListener | `(eventName: 'destroyed', callback: () => void) => void`| Adds a new listener to the 'destroyed' event |
 | removeEventListener | `(eventName: 'ready\|completed\|destroyed', callback) => void`| Removes a listener that is attached to some event. The callback is the function instance that was previously added to the listener |
 | destroy | `() => void`| Closes the connection with the api. This function also removes all listeners and call the listerners that were attached to the `'destroyed'` event|

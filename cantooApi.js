@@ -1,5 +1,11 @@
 //@ts-check
 
+const hosts = {
+  develop: 'https://develop.cantoo.fr',
+  preprod: 'https://preprod.cantoo.fr',
+  prod: 'https://cantoo.fr'
+}
+
 /**
  * @typedef {Object} ConnectProps
  * @property {HTMLElement} domElement The DOM node the iframe should be attached to
@@ -87,18 +93,13 @@
  * @return {string}
  */
 function buildUrl({ env, ...props }) {
-  const hosts = {
-    develop: 'develop.cantoo.fr',
-    preprod: 'preprod.cantoo.fr',
-    prod: 'cantoo.fr'
-  }
   const host = hosts[env]
   if (!host) throw new Error(`${env} is not a valid environment value. Try 'develop', 'preprod' or 'prod'.`)
   const query = Object.entries(props)
     .map(([key, value]) => value === true ? key : value ? `${key}=${value}` : undefined)
     .filter(entry => !!entry)
     .join('&')
-  return `https://${host}/api/embed?${query}`
+  return `${host}/api/embed?${query}`
 }
 
 class CantooAPI {
@@ -217,10 +218,11 @@ class CantooAPI {
     domElement.appendChild(this.iframe)
 
     this.postMessageListener = event => {
-      const data = JSON.parse(event.data)
-      if (['ready', 'completed', 'destroyed'].includes(data.type)) {
-        this.setState(data.type)
-        this.callbacks[data.type].forEach(listener => listener(data))
+      const type = event.data?.type
+      if (['ready', 'completed', 'destroyed'].includes(type)) {
+        this.setState(type)
+        if(type === 'destroyed') this._doDestroy()
+        else this.callbacks[type].forEach(listener => listener(event.data))
       }
     }
 
@@ -232,7 +234,7 @@ class CantooAPI {
    * @param {'launching'|'ready'|'completed'|'destroyed'} state
    * @private
    */
-  setState(state) {
+  setState = (state) => {
     // @ts-ignore
     this.state = state
   }
@@ -249,7 +251,7 @@ class CantooAPI {
       /** @type {ReadyHandler} */
       const callback = (event) => {
         api.removeEventListener('ready', callback)
-        this.fileId = event.fileId
+        api.fileId = event.fileId
         resolve(api)
       }
       api.addEventListener('ready', callback)
@@ -263,18 +265,16 @@ class CantooAPI {
     }))
   }
 
-  _buildUrl() {
-    return buildUrl({
-      env: this.env,
-      idEnt: this.idEnt,
-      readOnly: this.readOnly,
-      uai: this.uai,
-      userId: this.userId,
-      // We have to type as if we were creating or loading a file (here, loading)
-      fileId: /** @type {string} **/(this.fileId),
-      title: this.title
-    })
-  }
+  _buildUrl = () => buildUrl({
+    env: this.env,
+    idEnt: this.idEnt,
+    readOnly: this.readOnly,
+    uai: this.uai,
+    userId: this.userId,
+    // We have to type as if we were creating or loading a file (here, loading)
+    fileId: /** @type {string} **/(this.fileId),
+    title: this.title
+  })
 
   /**
    * Load the specified document in Cantoo.
@@ -282,7 +282,7 @@ class CantooAPI {
    * @param {boolean=} readOnly Should this viewer be made read only?
    * @return {Promise<void>} A promise that will resolve when the document was loaded and the ready event was received.
    */
-  loadDocument(fileId, readOnly) {
+  loadDocument = (fileId, readOnly) => {
     this.fileId = fileId
     this.title = undefined
     this.readOnly = !!readOnly
@@ -297,14 +297,39 @@ class CantooAPI {
         reject(new Error('Loading the document took more than 20s. Timeout.'))
         this.removeEventListener('ready', callback)
       }, 20000)
-    }))
+    })).catch(err => {
+      this.destroy()
+      throw err
+    })
   }
 
   /**
    * This method will destroy the iframe, remove existing event listeners and release all resources. Don't forget to call it when you get rid of CantooAPI object.
-   * @returns {void}
+   * @returns {Promise<void>}
    */
-  destroy() {
+  destroy = async () => {
+    return /** @type {Promise<void>} */(new Promise((resolve, reject) => {
+      try {
+        if(!this.iframe?.contentWindow) return reject(new Error('iframe doesn\'t exist'))
+        this.addEventListener('destroyed', () => resolve())
+        this.iframe.contentWindow.postMessage({ type: 'close' }, '*')
+
+        // Reject after 10s timeout
+        setTimeout(() => reject(new Error('The iframe didn\'t respond within 10s. Destroying anyway')), 10000)
+      } catch (err) {
+        reject(err)
+      }
+    })).catch(err => {
+      this._doDestroy()
+      throw err
+    })
+  }
+
+  /**
+   * Remove the listeners and destroy the iframe, cutting all comunications with Cantoo Scribe
+   * @private
+   */
+  _doDestroy = () => {
     window.removeEventListener('message', this.postMessageListener)
     this.domElement.removeChild(this.iframe)
     this.setState('destroyed')
