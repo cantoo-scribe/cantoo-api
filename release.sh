@@ -8,7 +8,6 @@ then
   exit
 fi
 
-echo $npm_execpath
 node ./updateVersion.js
 echo "Version updated in package.json"
 version=`awk -F'"' '/"version": ".+"/{ print $4; exit; }' package.json`

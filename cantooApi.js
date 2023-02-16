@@ -71,13 +71,15 @@ const hosts = {
  * @typedef {Object} FileCreationProp
  * @property {undefined=} fileId The id of the document to edit.
  * @property {string} title The title of the new document. This is required if no fileId is provided
- * @property {false=} readOnly The title of the new document. This is required if no fileId is provided
+ * @property {false=} readOnly This should be false when creating a new document
+ * @property {'cabri'=} template The template model to load in the editor
  */
 /**
  * @typedef {Object} FileLoadingProp
  * @property {string} fileId The id of the document to edit.
  * @property {string=} title The title of the new document. This is required if no fileId is provided
  * @property {boolean=} readOnly The title of the new document. This is required if no fileId is provided
+ * @property {undefined=} template The template model to load in the editor
  */
 
 /**
@@ -149,6 +151,13 @@ class CantooAPI {
   title
 
   /**
+   * The template to be loaded when create a document
+   * @type {FileCreationProp['template']=}
+   * @private
+   */
+  template
+
+  /**
    * The Id of the file currently shown in the iFrame
    * @type {FileLoadingProp['fileId']=}
    * @private
@@ -210,6 +219,7 @@ class CantooAPI {
     this.readOnly = readOnly
 
     this.title = /** @type {FileCreationProp} */(props).title
+    this.template = /** @type {FileCreationProp} */(props).template
     this.fileId = /** @type {FileLoadingProp} */(props).fileId
 
     this.iframe = document.createElement('iframe')
@@ -273,7 +283,8 @@ class CantooAPI {
     userId: this.userId,
     // We have to type as if we were creating or loading a file (here, loading)
     fileId: /** @type {string} **/(this.fileId),
-    title: this.title
+    title: this.title,
+    template: /** @type {undefined} **/(this.template)
   })
 
   /**
@@ -286,6 +297,7 @@ class CantooAPI {
     this.fileId = fileId
     this.title = undefined
     this.readOnly = !!readOnly
+    this.template = undefined
     this.iframe.src = this._buildUrl()
     return /** @type {Promise<void>} */(new Promise((resolve, reject) => {
       const callback = () => {
