@@ -320,7 +320,7 @@ class CantooAPI {
    * @returns {Promise<void>}
    */
   destroy = async () => {
-    return /** @type {Promise<void>} */(new Promise((resolve, reject) => {
+    return /** @type {Promise<void>} */(new Promise(((resolve, reject) => {
       try {
         if(!this.iframe?.contentWindow) return reject(new Error('iframe doesn\'t exist'))
         this.addEventListener('destroyed', () => resolve())
@@ -331,7 +331,7 @@ class CantooAPI {
       } catch (err) {
         reject(err)
       }
-    })).catch(err => {
+    }).bind(this))).catch(err => {
       this._doDestroy()
       throw err
     })
