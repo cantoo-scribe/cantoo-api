@@ -227,14 +227,21 @@ class CantooAPI {
     this.iframe.setAttribute('style', 'flex: 1 1 0;align-self: stretch;')
     domElement.appendChild(this.iframe)
 
-    this.postMessageListener = event => {
+    this.postMessageListener = (event => {
       const type = event.data?.type
       if (['ready', 'completed', 'destroyed'].includes(type)) {
         this.setState(type)
         if(type === 'destroyed') this._doDestroy()
         else this.callbacks[type].forEach(listener => listener(event.data))
       }
-    }
+    }).bind(this)
+    this.setState = this.setState.bind(this)
+    this._buildUrl = this._buildUrl.bind(this)
+    this.loadDocument = this.loadDocument.bind(this)
+    this.destroy = this.destroy.bind(this)
+    this._doDestroy = this._doDestroy.bind(this)
+    this.addEventListener = this.addEventListener.bind(this)
+    this.removeEventListener = this.removeEventListener.bind(this)
 
     // this might cause a memory leak if destroy is not called
     window.addEventListener('message', this.postMessageListener)
