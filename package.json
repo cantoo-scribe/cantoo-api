@@ -1,6 +1,6 @@
 {
   "name": "@cantoo/cantoo-api",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "A client api for integration with Cantoo Scribe",
   "main": "cantooApi.js",
   "scripts": {
