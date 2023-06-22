@@ -306,9 +306,9 @@ class CantooAPI {
       }
       this.addEventListener('ready', callback)
       setTimeout(() => {
-        reject(new Error('Loading the document took more than 20s. Timeout.'))
+        reject(new Error('Loading the document took more than 60s. Timeout.'))
         this.removeEventListener('ready', callback)
-      }, 20000)
+      }, 60000)
     })).catch(err => {
       this.destroy()
       throw err
