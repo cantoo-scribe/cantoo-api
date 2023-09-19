@@ -12,13 +12,18 @@ const hosts = {
  */
 
 /**
- * @typedef {'ready' | 'completed' | 'destroyed'} EventType
+ * @typedef {'ready' | 'completed' | 'destroyed' | 'logout'} EventType
  */
 
 /**
  * @typedef {Object} ReadyEvent
  * @property {string} userId The id of the user currently logged in the app
  * @property {string} fileId The id of the file being viewed/edited
+ */
+
+/**
+ * @typedef {Object} LogoutEvent
+ * @property {string} userId The id of the user logging out of the app
  */
 
 /**
@@ -35,19 +40,25 @@ const hosts = {
  */
 
 /**
+ * @callback LogoutHandler
+ * @param {LogoutEvent} event The "ready" event
+ * @return {void}
+ */
+
+/**
  * @callback CompletedHandler
  * @param {CompletedEvent} event The "completed" event
  * @return {void}
  */
 
 /**
- * @callback DestroyedHandler
+ * @callback BasicEventHandler
  * @return {void}
  */
 
 /**
  * @template {EventType} EventName
- * @typedef {EventName extends 'ready' ? ReadyHandler  : EventName extends 'completed' ? CompletedEvent : DestroyedHandler} EventHandler
+ * @typedef {EventName extends 'ready' ? ReadyHandler  : EventName extends 'completed' ? CompletedEvent : BasicEventHandler} EventHandler
  */
 
 /**
@@ -117,7 +128,8 @@ class CantooAPI {
    * @type {{
    *  ready: ReadyHandler[]
    *  completed: CompletedHandler[]
-   *  destroyed: DestroyedHandler[]
+   *  destroyed: BasicEventHandler[]
+   *  logout: LogoutHandler[]
    * }}
    */
   callbacks = {
@@ -125,8 +137,10 @@ class CantooAPI {
     ready: [],
     /** @type {CompletedHandler[]} */
     completed: [],
-    /** @type {DestroyedHandler[]} */
-    destroyed: []
+    /** @type {BasicEventHandler[]} */
+    destroyed: [],
+    /** @type {LogoutHandler[]} */
+    logout: []
   }
 
   /**
@@ -350,7 +364,8 @@ class CantooAPI {
     this.callbacks = {
       ready: [],
       completed: [],
-      destroyed: []
+      destroyed: [],
+      logout: []
     }
   }
 
@@ -362,7 +377,7 @@ class CantooAPI {
    * @return {void}
    */
   addEventListener = (eventName, listener) => {
-    this.callbacks[eventName].push(/** @type {DestroyedHandler} */(listener))
+    this.callbacks[eventName].push(/** @type {BasicEventHandler} */(listener))
   }
 
   /**
@@ -373,7 +388,7 @@ class CantooAPI {
    * @return {void}
    */
   removeEventListener = (eventName, listener) => {
-    this.callbacks[/** @type {'destroyed'} **/(eventName)] = /** @type {DestroyedHandler[]} */(this.callbacks[eventName].filter(c => c !== listener))
+    this.callbacks[/** @type {'destroyed'} **/(eventName)] = /** @type {BasicEventHandler[]} */(this.callbacks[eventName].filter(c => c !== listener))
   }
 }
 
