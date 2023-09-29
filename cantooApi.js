@@ -338,7 +338,11 @@ class CantooAPI {
     return /** @type {Promise<void>} */(new Promise(((resolve, reject) => {
       try {
         if(!this.iframe?.contentWindow) return reject(new Error('iframe doesn\'t exist'))
-        this.addEventListener('destroyed', () => resolve())
+        const onDestroy = () => {
+          resolve()
+          this.removeEventListener('destroyed', onDestroy)
+        }
+        this.addEventListener('destroyed', onDestroy)
         this.iframe.contentWindow.postMessage({ type: 'close' }, '*')
 
         // Reject after 10s timeout
