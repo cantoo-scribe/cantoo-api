@@ -237,8 +237,7 @@ class CantooAPI {
     this.fileId = /** @type {FileLoadingProp} */(props).fileId
 
     this.iframe = document.createElement('iframe')
-    this.iframe.allowFullscreen = true
-    this.iframe.allow = 'fullscreen; camera; display-capture; local-fonts; microphone'
+    this.iframe.allow = "fullscreen *; camera *; display-capture *; local-fonts *; microphone *"
     this.iframe.src = this._buildUrl()
     this.iframe.setAttribute('style', 'flex: 1 1 0;align-self: stretch;')
     domElement.appendChild(this.iframe)
