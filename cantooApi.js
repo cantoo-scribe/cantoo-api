@@ -281,8 +281,8 @@ class CantooAPI {
       }
       api.addEventListener('ready', callback)
       setTimeout(() =>
-        reject(new Error('The iframe took more than a minute to open. Timeout.'))
-        , 60000)
+        reject(new Error('The iframe took more than 5 minute to open. Timeout.'))
+        , 5 * 60000)
     }).catch(err => {
       // If the iframe failed to load, we destroy it
       api.destroy()
