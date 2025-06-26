@@ -10,6 +10,7 @@ To create a new connection with the cantoo api you must call the static method `
 |-----|------|----------|-------------|
 | domElement | ` HTMLElement` | required | The DOM element which the iframe will be attached to. It should use `display:flex;` |
 | userId | `string` | required | The user id that wants to interact with the api (as received from the GAR) |
+| name | `string` | optional | The username of the user who owns the document |
 | fileId | `string` | optional | The file id that is going to be edited (as received in the "ready" and "completed" events) |
 | title | `string` | optional | The title of the file that will be created. Should not be set if fileId is set |
 | idEnt | `string` | required | The idEnt as received from the GAR |
@@ -18,7 +19,7 @@ To create a new connection with the cantoo api you must call the static method `
 | readOnly | `boolean` | required | Should the user be able to edit the file, or is it only a viewer? |
 
 ```js
-const api = await CantooAPI.connect({domElement, env: 'develop', idEnt: '1', uai: '2', userId: '10', fileId: '10', readOnly: true})
+const api = await CantooAPI.connect({domElement, env: 'develop', idEnt: '1', uai: '2', userId: '10', name: 'John Doe', fileId: '10', readOnly: true})
 ```
 
 ## The CantooApi instance

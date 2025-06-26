@@ -72,6 +72,7 @@ const hosts = {
 /**
  * @typedef {Object} UrlProps
  * @property {string} userId The useId that will own the edited document
+ * @property {string=} name The username of the user who owns the document
  * @property {string} idEnt The idEnt of the user. Will be used for authentication.
  * @property {string} uai The uai of the user. Will be used for authentication.
  * @property {'develop'|'preprod'|'prod'} env The current environment
@@ -200,6 +201,13 @@ class CantooAPI {
   userId
 
   /**
+   * The username currently logged in the app
+   * @type {UrlProps['name']}
+   * @private
+   */
+  name
+
+  /**
    * The iframe DOM node
    * @type {HTMLIFrameElement}
    * @private
@@ -224,12 +232,13 @@ class CantooAPI {
    * Create a CantooApi object that you can use to create and control a Cantoo Scribe iframe
    * @param {ConnectProps & UrlProps & (FileCreationProp | FileLoadingProp)} params
    */
-  constructor({ domElement, env, idEnt, uai, userId, readOnly, ...props }) {
+  constructor({ domElement, env, idEnt, uai, userId, readOnly, name, ...props }) {
     this.domElement = domElement
     this.env = env
     this.idEnt = idEnt
     this.uai = uai
     this.userId = userId
+    this.name = name
     this.readOnly = readOnly
 
     this.title = /** @type {FileCreationProp} */(props).title
@@ -296,6 +305,7 @@ class CantooAPI {
     readOnly: this.readOnly,
     uai: this.uai,
     userId: this.userId,
+    name: this.name,
     // We have to type as if we were creating or loading a file (here, loading)
     fileId: /** @type {string} **/(this.fileId),
     title: this.title,
