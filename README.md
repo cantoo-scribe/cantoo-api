@@ -9,12 +9,9 @@ To create a new connection with the cantoo api you must call the static method `
 | key | type | required | description |
 |-----|------|----------|-------------|
 | domElement | ` HTMLElement` | required | The DOM element which the iframe will be attached to. It should use `display:flex;` |
-| userId | `string` | required | The user id that wants to interact with the api (as received from the GAR) |
-| name | `string` | optional | The username of the user who owns the document |
+| accessToken | `string` | required | The token of the user that wants to interact with the api (as received from the GAR) |
 | fileId | `string` | optional | The file id that is going to be edited (as received in the "ready" and "completed" events) |
 | title | `string` | optional | The title of the file that will be created. Should not be set if fileId is set |
-| idEnt | `string` | required | The idEnt as received from the GAR |
-| uai | `string` | required | The UAI as received from the GAR |
 | env | `'prod' \| 'preprod' \| 'develop'` | required | The environment that the client will connect to |
 | readOnly | `boolean` | required | Should the user be able to edit the file, or is it only a viewer? |
 

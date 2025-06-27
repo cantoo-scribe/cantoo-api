@@ -71,10 +71,7 @@ const hosts = {
 
 /**
  * @typedef {Object} UrlProps
- * @property {string} userId The useId that will own the edited document
- * @property {string=} name The username of the user who owns the document
- * @property {string} idEnt The idEnt of the user. Will be used for authentication.
- * @property {string} uai The uai of the user. Will be used for authentication.
+ * @property {string} accessToken The token of the user that wants to interact with the api (as received from the GAR)
  * @property {'develop'|'preprod'|'prod'} env The current environment
  * @property {boolean} readOnly Should we open a viewer or an editor?
  */
@@ -180,32 +177,11 @@ class CantooAPI {
   fileId
 
   /**
-   * The Id of the user's ENT
-   * @type {UrlProps['idEnt']}
+   * The token of the user's ENT
+   * @type {UrlProps['accessToken']}
    * @private
    */
-  idEnt
-
-  /**
-   * The establishment Id
-   * @type {UrlProps['uai']}
-   * @private
-   */
-  uai
-
-  /**
-   * The user Id currently logged in the app
-   * @type {UrlProps['userId']}
-   * @private
-   */
-  userId
-
-  /**
-   * The username currently logged in the app
-   * @type {UrlProps['name']}
-   * @private
-   */
-  name
+  accessToken
 
   /**
    * The iframe DOM node
@@ -232,12 +208,10 @@ class CantooAPI {
    * Create a CantooApi object that you can use to create and control a Cantoo Scribe iframe
    * @param {ConnectProps & UrlProps & (FileCreationProp | FileLoadingProp)} params
    */
-  constructor({ domElement, env, idEnt, uai, userId, readOnly, name, ...props }) {
+  constructor({ domElement, env, accessToken, readOnly, ...props }) {
     this.domElement = domElement
     this.env = env
-    this.idEnt = idEnt
-    this.uai = uai
-    this.userId = userId
+    this.accessToken = accessToken
     this.name = name
     this.readOnly = readOnly
 
@@ -301,11 +275,8 @@ class CantooAPI {
 
   _buildUrl = () => buildUrl({
     env: this.env,
-    idEnt: this.idEnt,
+    accessToken: this.accessToken,
     readOnly: this.readOnly,
-    uai: this.uai,
-    userId: this.userId,
-    name: this.name,
     // We have to type as if we were creating or loading a file (here, loading)
     fileId: /** @type {string} **/(this.fileId),
     title: this.title,
