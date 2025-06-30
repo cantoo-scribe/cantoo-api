@@ -16,7 +16,7 @@ To create a new connection with the cantoo api you must call the static method `
 | readOnly | `boolean` | required | Should the user be able to edit the file, or is it only a viewer? |
 
 ```js
-const api = await CantooAPI.connect({domElement, env: 'develop', idEnt: '1', uai: '2', userId: '10', name: 'John Doe', fileId: '10', readOnly: true})
+const api = await CantooAPI.connect({domElement, env: 'develop', accessToken: '1', fileId: '10', readOnly: true})
 ```
 
 ## The CantooApi instance
